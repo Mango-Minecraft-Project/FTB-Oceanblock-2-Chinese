@@ -74,7 +74,9 @@ def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
     dir_path = Path("ZHTWPack") / path.parent
     dir_path.mkdir(parents=True, exist_ok=True)
     file_path = dir_path / "zh_tw.json"
-    source_path = str(file_path).replace("zh_tw.json", "en_us.json").replace("ZHTWPack", "Source")
+    source_path = (
+        str(file_path).replace("zh_tw.json", "en_us.json").replace("ZHTWPack", "Source")
+    )
     with open(file_path, "w", encoding="UTF-8") as f:
         try:
             with open(source_path, "r", encoding="UTF-8") as f1:
@@ -82,10 +84,19 @@ def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
             keys = source_json.keys()
             for key in keys:
                 source_json[key] = zh_tw_dict[key]
-            json.dump(source_json, f, ensure_ascii=False, indent=4, separators=(",", ":"))
+            json.dump(
+                source_json, f, ensure_ascii=False, indent=4, separators=(",", ":")
+            )
         except IOError:
             print(f"{source_path} 路徑不存在，文件按首字母排序！")
-            json.dump(zh_tw_dict, f, ensure_ascii=False, indent=4, separators=(",", ":"),sort_keys=True)
+            json.dump(
+                zh_tw_dict,
+                f,
+                ensure_ascii=False,
+                indent=4,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
 
 
 def process_translation(file_id: int, path: Path) -> dict[str, str]:
@@ -131,28 +142,35 @@ def json_to_nbt(data):
     else:
         raise ValueError(f"Unsupported data type: {type(data)}")
 
+
 # Pretty-print SNBT with indentation and wrap all values in double quotes
 def format_snbt(nbt_data, indent=0):
     INDENT_SIZE = 4  # Number of spaces for each indent level
-    indent_str = ' ' * indent
-    
+    indent_str = " " * indent
+
     if isinstance(nbt_data, Compound):
-        formatted = ['{']
+        formatted = ["{"]
         for key, value in nbt_data.items():
-            formatted.append(f'\n{indent_str}{" " * INDENT_SIZE}{key}:{format_snbt(value, indent + INDENT_SIZE)}')
-        formatted.append(f'\n{indent_str}}}')
-        return ''.join(formatted)
-    
+            formatted.append(
+                f'\n{indent_str}{" " * INDENT_SIZE}{key}:{format_snbt(value, indent + INDENT_SIZE)}'
+            )
+        formatted.append(f"\n{indent_str}}}")
+        return "".join(formatted)
+
     elif isinstance(nbt_data, nbtlib.tag.List):
-        formatted = ['[']
+        formatted = ["["]
         for item in nbt_data:
-            formatted.append(f'\n{indent_str}{" " * INDENT_SIZE}{format_snbt(item, indent + INDENT_SIZE)}')
-        formatted.append(f'\n{indent_str}]')
-        return ''.join(formatted)
-    
+            formatted.append(
+                f'\n{indent_str}{" " * INDENT_SIZE}{format_snbt(item, indent + INDENT_SIZE)}'
+            )
+        formatted.append(f"\n{indent_str}]")
+        return "".join(formatted)
+
     else:
         # Wrap all primitive types (String/Int) in double quotes
         return f'"{str(nbt_data)}"'
+
+
 def escape_quotes(data):
     if isinstance(data, dict):
         return {key: escape_quotes(value) for key, value in data.items()}
@@ -163,8 +181,15 @@ def escape_quotes(data):
     else:
         return data
 
-def  normal_json2_ftb_desc(origin_en_us):
-    en_json = json.dumps(origin_en_us,ensure_ascii=False, indent=4, separators=(",", ":"),sort_keys=True)
+
+def normal_json2_ftb_desc(origin_en_us):
+    en_json = json.dumps(
+        origin_en_us,
+        ensure_ascii=False,
+        indent=4,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
     en_json = eval(en_json)
     temp_set = set()
     temp_en_json = {}
@@ -185,6 +210,7 @@ def  normal_json2_ftb_desc(origin_en_us):
     print("NormalJson2FtbDesc end...")
     return en_json
 
+
 def main() -> None:
     get_files()
     ftbquests_dict = {}
@@ -195,12 +221,14 @@ def main() -> None:
         zh_tw_list.append(zh_tw_dict)
         if "kubejs/assets/quests/lang/" in path:
             ftbquests_dict = ftbquests_dict | zh_tw_dict
-            continue;
+            continue
         save_translation(zh_tw_dict, Path(path))
-        print(f"已從 Paratranz 下載到儲存庫：{re.sub('en_us.json', 'zh_tw.json', path)}")
+        print(
+            f"已從 Paratranz 下載到儲存庫：{re.sub('en_us.json', 'zh_tw.json', path)}"
+        )
     snbt_dict = normal_json2_ftb_desc(ftbquests_dict)
-    
-    #json_data = json.dumps(snbt_dict,ensure_ascii=False, indent=4, separators=(",", ":"))
+
+    # json_data = json.dumps(snbt_dict,ensure_ascii=False, indent=4, separators=(",", ":"))
     # Escape quotation marks in the translated data
     json_data = escape_quotes(snbt_dict)
 
@@ -210,10 +238,11 @@ def main() -> None:
     # Format the NBT structure as a pretty-printed SNBT string
     formatted_snbt_string = format_snbt(nbt_data)
     # Optionally save the formatted SNBT to a file
-    nbt_path = Path('ZHTWPack/config/ftbquests/quests/lang/')
+    nbt_path = Path("ZHTWPack/config/ftbquests/quests/lang/")
     nbt_path.mkdir(parents=True, exist_ok=True)
-    with open(nbt_path / "zh_tw.snbt", 'w', encoding='utf-8') as snbt_file:
+    with open(nbt_path / "zh_tw.snbt", "w", encoding="utf-8") as snbt_file:
         snbt_file.write(formatted_snbt_string)
-    
+
+
 if __name__ == "__main__":
     main()

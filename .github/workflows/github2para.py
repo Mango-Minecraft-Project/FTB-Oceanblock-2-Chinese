@@ -26,7 +26,9 @@ async def upload_file(path, file):
             filePath: str = json.loads(e.__dict__.get("body"))["message"].split(" ")[1]
             for fileName in files_response:
                 if fileName.name == filePath:
-                    await api_instance.update_file(project_id, file_id=fileName.id, file=file)
+                    await api_instance.update_file(
+                        project_id, file_id=fileName.id, file=file
+                    )
                     print(f"檔案已更新！檔案路徑為：{fileName.name}")
 
 
