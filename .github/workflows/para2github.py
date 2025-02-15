@@ -210,7 +210,9 @@ def main() -> None:
     # Format the NBT structure as a pretty-printed SNBT string
     formatted_snbt_string = format_snbt(nbt_data)
     # Optionally save the formatted SNBT to a file
-    with open('ZHTWPack/config/ftbquests/quests/lang/zh_tw.snbt', 'w', encoding='utf-8') as snbt_file:
+    nbt_path = Path('ZHTWPack/config/ftbquests/quests/lang/zh_tw.snbt')
+    nbt_path.mkdir(parents=True, exist_ok=True)
+    with open(nbt_path, 'w', encoding='utf-8') as snbt_file:
         snbt_file.write(formatted_snbt_string)
     
 if __name__ == "__main__":
