@@ -1,5 +1,13 @@
 {
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
-  }
+  },
+  "cSpell.words": [
+    "ftbquest",
+    "ftbquests",
+    "nbtlib",
+    "Paratranz",
+    "snbt",
+    "ZHTW"
+  ]
 }

@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Tuple
 import nbtlib
-from nbtlib.tag import Compound, String, Int
+from nbtlib.tag import Compound, String, Int, List
 import requests
 
 TOKEN: str = os.getenv("API_TOKEN", "")
@@ -84,9 +84,7 @@ def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
             keys = source_json.keys()
             for key in keys:
                 source_json[key] = zh_tw_dict[key]
-            json.dump(
-                source_json, f, ensure_ascii=False, indent=4, separators=(",", ":")
-            )
+            json.dump(source_json, f, ensure_ascii=False, indent=4)
         except IOError:
             print(f"{source_path} 路徑不存在，文件按首字母排序！")
             json.dump(
@@ -94,7 +92,6 @@ def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
                 f,
                 ensure_ascii=False,
                 indent=4,
-                separators=(",", ":"),
                 sort_keys=True,
             )
 
@@ -130,11 +127,11 @@ def process_translation(file_id: int, path: Path) -> dict[str, str]:
 
 
 # 將 JSON 轉換為 NBT 組合結構
-def json_to_nbt(data):
+def json_to_nbt(data: dict | list | str | int) -> Compound | List | String | Int:
     if isinstance(data, dict):
         return Compound({key: json_to_nbt(value) for key, value in data.items()})
     elif isinstance(data, list):
-        return nbtlib.tag.List[nbtlib.tag.String]([json_to_nbt(item) for item in data])
+        return List[String]([json_to_nbt(item) for item in data])
     elif isinstance(data, str):
         return String(data)
     elif isinstance(data, int):
@@ -144,7 +141,7 @@ def json_to_nbt(data):
 
 
 # Pretty-print SNBT with indentation and wrap all values in double quotes
-def format_snbt(nbt_data, indent=0):
+def format_snbt(nbt_data, indent=0) -> str:
     INDENT_SIZE = 4  # Number of spaces for each indent level
     indent_str = " " * indent
 
@@ -152,37 +149,36 @@ def format_snbt(nbt_data, indent=0):
         formatted = ["{"]
         for key, value in nbt_data.items():
             formatted.append(
-                f'\n{indent_str}{" " * INDENT_SIZE}{key}:{format_snbt(value, indent + INDENT_SIZE)}'
+                f'{indent_str}{" " * INDENT_SIZE}{key}:{format_snbt(value, indent + INDENT_SIZE)}'
             )
-        formatted.append(f"\n{indent_str}}}")
-        return "".join(formatted)
+        formatted.append(f"{indent_str}}}")
+        return "\n".join(formatted)
 
-    elif isinstance(nbt_data, nbtlib.tag.List):
+    elif isinstance(nbt_data, List):
         formatted = ["["]
         for item in nbt_data:
             formatted.append(
-                f'\n{indent_str}{" " * INDENT_SIZE}{format_snbt(item, indent + INDENT_SIZE)}'
+                f'{indent_str}{" " * INDENT_SIZE}{format_snbt(item, indent + INDENT_SIZE)}'
             )
-        formatted.append(f"\n{indent_str}]")
-        return "".join(formatted)
+        formatted.append(f"{indent_str}]")
+        return "\n".join(formatted)
 
     else:
         # Wrap all primitive types (String/Int) in double quotes
-        return f'"{str(nbt_data)}"'
+        return f'"{nbt_data}"'
 
 
 def escape_quotes(data):
     if isinstance(data, dict):
         return {key: escape_quotes(value) for key, value in data.items()}
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return [escape_quotes(item) for item in data]
-    elif isinstance(data, str):
+    if isinstance(data, str):
         return data.replace('"', '\\"')
-    else:
-        return data
+    return data
 
 
-def normal_json2_ftb_desc(origin_en_us):
+def normal_json2_ftb_desc(origin_en_us) -> dict:
     en_json = json.dumps(
         origin_en_us,
         ensure_ascii=False,
@@ -190,21 +186,21 @@ def normal_json2_ftb_desc(origin_en_us):
         separators=(",", ":"),
         sort_keys=True,
     )
-    en_json = eval(en_json)
+    en_json: dict = json.loads(en_json)
     temp_set = set()
     temp_en_json = {}
-    for key, value in list(en_json.items()):
-        if "desc" in key:
-            key_id = key.split(".")[1]
+    for json_key, value in en_json.items():
+        if "desc" in json_key:
+            key_id = json_key.split(".")[1]
             temp_json_array = []
-            for k in en_json.keys():
-                if f"{key_id}.quest_desc" in k:
-                    temp_json_array.append(en_json[k])
+            for sub_key in en_json.keys():
+                if f"{key_id}.quest_desc" in sub_key:
+                    temp_json_array.append(en_json[sub_key])
             new_key = f"quest.{key_id}.quest_desc"
             temp_en_json[new_key] = temp_json_array
-            temp_set.add(key)
-    for key in temp_set:
-        en_json.pop(key, None)
+            temp_set.add(json_key)
+    for json_key in temp_set:
+        en_json.pop(json_key, None)
     en_json.update(temp_en_json)
 
     print("NormalJson2FtbDesc end...")
@@ -224,7 +220,7 @@ def main() -> None:
             continue
         save_translation(zh_tw_dict, Path(path))
         print(
-            f"已從 Paratranz 下載到儲存庫：{re.sub('en_us.json', 'zh_tw.json', path)}"
+            f"已從 Paratranz 下載到儲存庫：{path.replace('en_us.json', 'zh_tw.json')}"
         )
     snbt_dict = normal_json2_ftb_desc(ftbquests_dict)
 
