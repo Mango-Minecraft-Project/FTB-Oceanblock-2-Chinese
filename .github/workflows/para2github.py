@@ -1,8 +1,10 @@
 import json
 import os
 import re
+import copy
 from pathlib import Path
 from typing import Tuple
+
 import nbtlib
 from nbtlib.tag import Compound, String, Int, List
 import requests
@@ -84,14 +86,14 @@ def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
             keys = source_json.keys()
             for key in keys:
                 source_json[key] = zh_tw_dict[key]
-            json.dump(source_json, f, ensure_ascii=False, indent=4)
+            json.dump(source_json, f, ensure_ascii=False, indent=2)
         except IOError:
             print(f"{source_path} 路徑不存在，文件按首字母排序！")
             json.dump(
                 zh_tw_dict,
                 f,
                 ensure_ascii=False,
-                indent=4,
+                indent=2,
                 sort_keys=True,
             )
 
@@ -130,18 +132,17 @@ def process_translation(file_id: int, path: Path) -> dict[str, str]:
 def json_to_nbt(data: dict | list | str | int) -> Compound | List | String | Int:
     if isinstance(data, dict):
         return Compound({key: json_to_nbt(value) for key, value in data.items()})
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return List[String]([json_to_nbt(item) for item in data])
-    elif isinstance(data, str):
+    if isinstance(data, str):
         return String(data)
-    elif isinstance(data, int):
+    if isinstance(data, int):
         return Int(data)
-    else:
-        raise ValueError(f"Unsupported data type: {type(data)}")
+    raise ValueError(f"Unsupported data type: {type(data)}")
 
 
 # Pretty-print SNBT with indentation and wrap all values in double quotes
-def format_snbt(nbt_data, indent=0) -> str:
+def format_snbt(nbt_data: Compound | List, indent: int = 0) -> str:
     INDENT_SIZE = 4  # Number of spaces for each indent level
     indent_str = " " * indent
 
@@ -154,7 +155,7 @@ def format_snbt(nbt_data, indent=0) -> str:
         formatted.append(f"{indent_str}}}")
         return "\n".join(formatted)
 
-    elif isinstance(nbt_data, List):
+    if isinstance(nbt_data, List):
         formatted = ["["]
         for item in nbt_data:
             formatted.append(
@@ -163,9 +164,8 @@ def format_snbt(nbt_data, indent=0) -> str:
         formatted.append(f"{indent_str}]")
         return "\n".join(formatted)
 
-    else:
-        # Wrap all primitive types (String/Int) in double quotes
-        return f'"{nbt_data}"'
+    # Wrap all primitive types (String/Int) in double quotes
+    return f'"{nbt_data}"'
 
 
 def escape_quotes(data):
@@ -178,30 +178,28 @@ def escape_quotes(data):
     return data
 
 
-def normal_json2_ftb_desc(origin_en_us) -> dict:
-    en_json = json.dumps(
-        origin_en_us,
-        ensure_ascii=False,
-        indent=4,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
-    en_json: dict = json.loads(en_json)
+def normal_json2_ftb_desc(origin_en_us: dict) -> dict:
+    en_json = copy.deepcopy(origin_en_us)
     temp_set = set()
     temp_en_json = {}
     for json_key, value in en_json.items():
-        if "desc" in json_key:
-            key_id = json_key.split(".")[1]
-            temp_json_array = []
-            for sub_key in en_json.keys():
-                if f"{key_id}.quest_desc" in sub_key:
-                    temp_json_array.append(en_json[sub_key])
-            new_key = f"quest.{key_id}.quest_desc"
-            temp_en_json[new_key] = temp_json_array
-            temp_set.add(json_key)
+        if "desc" not in json_key:
+            continue
+
+        key_id = json_key.split(".")[1]
+        temp_json_array = []
+        for sub_key in en_json.keys():
+            if f"{key_id}.quest_desc" not in sub_key:
+                continue
+            temp_json_array.append(en_json[sub_key])
+
+        new_key = f"quest.{key_id}.quest_desc"
+        temp_en_json[new_key] = temp_json_array
+        temp_set.add(json_key)
+
     for json_key in temp_set:
         en_json.pop(json_key, None)
-    en_json.update(temp_en_json)
+    en_json |= temp_en_json
 
     print("NormalJson2FtbDesc end...")
     return en_json
@@ -216,7 +214,7 @@ def main() -> None:
         zh_tw_dict = process_translation(file_id, Path(path))
         zh_tw_list.append(zh_tw_dict)
         if "kubejs/assets/quests/lang/" in path:
-            ftbquests_dict = ftbquests_dict | zh_tw_dict
+            ftbquests_dict |= zh_tw_dict
             continue
         save_translation(zh_tw_dict, Path(path))
         print(
