@@ -21,13 +21,13 @@ async def upload_file(path, file):
             )
             pprint(api_response)
         except ValidationError as error:
-            print(f"文件上传成功{path}en_us.json")
+            print(f"檔案上傳成功：{path}en_us.json")
         except Exception as e:
             filePath: str = json.loads(e.__dict__.get("body"))["message"].split(" ")[1]
             for fileName in files_response:
                 if fileName.name == filePath:
                     await api_instance.update_file(project_id, file_id=fileName.id, file=file)
-                    print(f"文件已更新！文件路径为：{fileName.name}")
+                    print(f"檔案已更新！檔案路徑為：{fileName.name}")
 
 
 def get_filelist(dir):
@@ -49,7 +49,7 @@ async def main():
             .replace("\\", "/")
             .replace(os.path.basename(file), "")
         )
-        print(f"Uploading {file} to {path}")
+        print(f"上傳 {file} 至 {path}")
         tasks.append(upload_file(path=path, file=file))
 
     await asyncio.gather(*tasks)

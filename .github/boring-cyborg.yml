@@ -1,23 +1,23 @@
 labelPRBasedOnFilePath:
   need review:
-    - "CNPack/**"
+    - "ZHTWPack/**"
 
   kubejs:
-    - "CNPack/kubejs/**"
+    - "ZHTWPack/kubejs/**"
 
   resource:
-    - "CNPack/kubejs/assets/**"
-    - "CNPack/config/fancymenu/**"
+    - "ZHTWPack/kubejs/assets/**"
+    - "ZHTWPack/config/fancymenu/**"
 
   ftbquest:
-    - "CNPack/config/ftbquests/**"
-    - "CNPack/kubejs/assets/ftbquests**"
+    - "ZHTWPack/config/ftbquests/**"
+    - "ZHTWPack/kubejs/assets/ftbquests**"
 
 labelerFlags:
     labelOnPRUpdates: true  
 
 firstPRWelcomeComment: >
-  - 请确定此 Pull Request 的目标分支是否正确
-  - 请确定此 Pull Request 的状态，若未完成，请设置为 Draft
-  - 劣质的机器翻译请不要轻易提交，但是机翻润色是允许的
-  - 请耐心等待审核，审核完成后请及时前来处理
+  - 請確認此 Pull Request 的目標分支是否正確
+  - 請確認此 Pull Request 的狀態，若未完成，請設置為 Draft
+  - 劣質的機器翻譯請不要輕易提交，但是機翻潤色是允許的
+  - 請耐心等待審核，審核完成後請及時前來處理

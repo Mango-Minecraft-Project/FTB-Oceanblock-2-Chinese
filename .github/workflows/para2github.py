@@ -18,7 +18,7 @@ if not TOKEN or not PROJECT_ID:
 # 初始化列表和字典
 file_id_list: list[int] = []
 file_path_list: list[str] = []
-zh_cn_list: list[dict[str, str]] = []
+zh_tw_list: list[dict[str, str]] = []
 
 
 def fetch_json(url: str, headers: dict[str, str]) -> list[dict[str, str]]:
@@ -29,10 +29,10 @@ def fetch_json(url: str, headers: dict[str, str]) -> list[dict[str, str]]:
 
 def translate(file_id: int) -> Tuple[list[str], list[str]]:
     """
-    获取指定文件的翻译内容并返回键值对列表
+    獲取指定檔案的翻譯內容並返回鍵值對列表
 
     :param file_id: 文件ID
-    :return: 包含键和值的元组列表
+    :return: 包含鍵和值的元組列表
     """
     url = f"https://paratranz.cn/api/projects/{PROJECT_ID}/files/{file_id}/translation"
     headers = {"Authorization": TOKEN, "accept": "*/*"}
@@ -44,7 +44,7 @@ def translate(file_id: int) -> Tuple[list[str], list[str]]:
         keys.append(item["key"])
         translation = item.get("translation", "")
         original = item.get("original", "")
-        # 优先使用翻译内容，缺失时根据 stage 使用原文
+        # 優先使用翻譯內容，缺失時根據 stage 使用原文
         values.append(
             original if not translation and item["stage"] in [0, -1] else translation
         )
@@ -54,7 +54,7 @@ def translate(file_id: int) -> Tuple[list[str], list[str]]:
 
 def get_files() -> None:
     """
-    获取项目中的文件列表并提取文件ID和路径
+    獲取項目中的檔案列表並提取檔案 ID 和路徑
     """
     headers = {"Authorization": TOKEN, "accept": "*/*"}
     files = fetch_json(FILE_URL, headers)
@@ -64,61 +64,61 @@ def get_files() -> None:
         file_path_list.append(file["name"])
 
 
-def save_translation(zh_cn_dict: dict[str, str], path: Path) -> None:
+def save_translation(zh_tw_dict: dict[str, str], path: Path) -> None:
     """
-    保存翻译内容到指定的 JSON 文件
+    保存翻譯內容到指定的 JSON 文件
 
-    :param zh_cn_dict: 翻译内容的字典
-    :param path: 原始文件路径
+    :param zh_tw_dict: 翻譯內容的字典
+    :param path: 原始檔案路徑
     """
-    dir_path = Path("CNPack") / path.parent
+    dir_path = Path("ZHTWPack") / path.parent
     dir_path.mkdir(parents=True, exist_ok=True)
-    file_path = dir_path / "zh_cn.json"
-    source_path = str(file_path).replace("zh_cn.json", "en_us.json").replace("CNPack", "Source")
+    file_path = dir_path / "zh_tw.json"
+    source_path = str(file_path).replace("zh_tw.json", "en_us.json").replace("ZHTWPack", "Source")
     with open(file_path, "w", encoding="UTF-8") as f:
         try:
             with open(source_path, "r", encoding="UTF-8") as f1:
                 source_json: dict = json.load(f1)
             keys = source_json.keys()
             for key in keys:
-                source_json[key] = zh_cn_dict[key]
+                source_json[key] = zh_tw_dict[key]
             json.dump(source_json, f, ensure_ascii=False, indent=4, separators=(",", ":"))
         except IOError:
-            print(f"{source_path}路径不存在，文件按首字母排序！")
-            json.dump(zh_cn_dict, f, ensure_ascii=False, indent=4, separators=(",", ":"),sort_keys=True)
+            print(f"{source_path} 路徑不存在，文件按首字母排序！")
+            json.dump(zh_tw_dict, f, ensure_ascii=False, indent=4, separators=(",", ":"),sort_keys=True)
 
 
 def process_translation(file_id: int, path: Path) -> dict[str, str]:
     """
-    处理单个文件的翻译，返回翻译字典
+    處理單個檔案的翻譯，返回翻譯字典
 
     :param file_id: 文件ID
-    :param path: 文件路径
-    :return: 翻译内容字典
+    :param path: 檔案路徑
+    :return: 翻譯內容字典
     """
     keys, values = translate(file_id)
 
-    # 手动处理文本的替换，避免反斜杠被转义
-    zh_cn_dict = {}
+    # 手動處理文本的替換，避免反斜杠被轉義
+    zh_tw_dict = {}
     for key, value in zip(keys, values):
-        # 确保替换 \\u00A0 和 \\n
+        # 確保替換 \\u00A0 和 \\n
         value = re.sub(r"&#92;", r"\\", value)
         value = re.sub(r"\\u00A0", "\u00A0", value)  # 替换 \\u00A0 为 \u00A0
         value = re.sub(r"\\n", "\n", value)  # 替换 \\n 为换行符
-        # 保存替换后的值
-        zh_cn_dict[key] = value
+        # 保存替換後的值
+        zh_tw_dict[key] = value
 
-    # 特殊处理：ftbquest 文件
+    # 特殊處理：ftbquest 檔案
     if "ftbquest" in path.name:
-        zh_cn_dict = {
+        zh_tw_dict = {
             key: value.replace(" ", "\u00A0") if "image" not in value else value
             for key, value in zip(keys, values)
         }
 
-    return zh_cn_dict
+    return zh_tw_dict
 
 
-# Convert JSON data into an NBT compound structure
+# 將 JSON 轉換為 NBT 組合結構
 def json_to_nbt(data):
     if isinstance(data, dict):
         return Compound({key: json_to_nbt(value) for key, value in data.items()})
@@ -189,15 +189,15 @@ def main() -> None:
     get_files()
     ftbquests_dict = {}
     for file_id, path in zip(file_id_list, file_path_list):
-        if "TM" in path:  # 跳过 TM 文件
+        if "TM" in path:  # 跳過 TM 檔案
             continue
-        zh_cn_dict = process_translation(file_id, Path(path))
-        zh_cn_list.append(zh_cn_dict)
+        zh_tw_dict = process_translation(file_id, Path(path))
+        zh_tw_list.append(zh_tw_dict)
         if "kubejs/assets/quests/lang/" in path:
-            ftbquests_dict = ftbquests_dict | zh_cn_dict
+            ftbquests_dict = ftbquests_dict | zh_tw_dict
             continue;
-        save_translation(zh_cn_dict, Path(path))
-        print(f"已从Patatranz下载到仓库：{re.sub('en_us.json', 'zh_cn.json', path)}")
+        save_translation(zh_tw_dict, Path(path))
+        print(f"已從 Paratranz 下載到儲存庫：{re.sub('en_us.json', 'zh_tw.json', path)}")
     snbt_dict = normal_json2_ftb_desc(ftbquests_dict)
     
     #json_data = json.dumps(snbt_dict,ensure_ascii=False, indent=4, separators=(",", ":"))
@@ -210,7 +210,7 @@ def main() -> None:
     # Format the NBT structure as a pretty-printed SNBT string
     formatted_snbt_string = format_snbt(nbt_data)
     # Optionally save the formatted SNBT to a file
-    with open('CNPack/config/ftbquests/quests/lang/zh_cn.snbt', 'w', encoding='utf-8') as snbt_file:
+    with open('ZHTWPack/config/ftbquests/quests/lang/zh_tw.snbt', 'w', encoding='utf-8') as snbt_file:
         snbt_file.write(formatted_snbt_string)
     
 if __name__ == "__main__":
