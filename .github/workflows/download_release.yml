@@ -1,8 +1,8 @@
-name: Paratranz To GitHub
+name: 從 Paratranz 下載至 GitHub
 
 on:
   schedule:
-    # 每天北京时间早上9点和晚上9点运行
+    # 每天台北時間早上 9 點和晚上 9 點執行
     - cron: "0 1,13 * * *"
   workflow_dispatch:
 

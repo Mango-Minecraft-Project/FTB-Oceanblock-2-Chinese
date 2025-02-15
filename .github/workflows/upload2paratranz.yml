@@ -1,4 +1,4 @@
-name: Upload Action
+name: 上傳至 Paratranz
 
 on:
   workflow_dispatch:
